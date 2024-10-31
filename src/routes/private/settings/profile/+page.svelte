@@ -68,7 +68,7 @@
 	>
 		<div class="flex flex-row items-center justify-between w-full mb-10">
 			<h1 class="text-2xl font-medium">Profile</h1>
-			{#if fullName !== ($profile?.full_name || '') || newAvatar !== null}
+			{#if newName !== ($profile?.full_name || '') || newAvatar !== null}
 				<Button type="submit" variant="outline" disabled={isUpdating}>
 					<Check class="w-4 h-4 mr-2" />
 					{isUpdating ? 'Saving...' : 'Save Changes'}
@@ -112,7 +112,7 @@
 			<!-- Profile Picture URL -->
 			<input hidden id="avatar" type="url" name="avatar" bind:value={newAvatar} />
 
-			<input hidden id="prevAvatarPath" type="url" name="prevAvatarPath" value={avatarUrl} />
+			<input hidden id="prevAvatarPath" type="text" name="prevAvatarPath" value={avatarUrl} />
 
 			<!-- Full Name -->
 			<div class="flex flex-col gap-2">
@@ -122,7 +122,7 @@
 					name="name"
 					type="text"
 					placeholder="Enter your display name"
-					bind:value={newName}
+					value={fullName}
 					on:input={handleNameChange}
 				/>
 				<p class="text-sm text-primary/40">This is how your name will appear across the app</p>
