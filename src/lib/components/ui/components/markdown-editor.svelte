@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { List, ListTodo, ListOrdered, Heading1, Heading2, Code, ImagePlus } from 'lucide-svelte';
+	import type { SupabaseClient } from '@supabase/supabase-js';
+	import { toast } from 'svelte-sonner';
+	import { marked } from 'marked';
 
+	export let supabase: SupabaseClient;
 	export let value: string;
 	export let isEditing: boolean;
 	export let parsedContent: string;
@@ -163,29 +167,44 @@
 	}
 
 	async function addImage() {
-		// Store cursor position before opening file dialog
 		const cursorPosition = textareaRef.selectionStart;
 		const currentLine = value.substring(0, cursorPosition).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 
-		// Create a file input element
 		const input = document.createElement('input');
 		input.type = 'file';
 		input.accept = 'image/*';
 
-		// Handle file selection
-		input.onchange = (e) => {
+		input.onchange = async (e) => {
 			const file = (e.target as HTMLInputElement).files?.[0];
 			if (file) {
-				const reader = new FileReader();
-				reader.onload = (e) => {
-					const imageMarkdown = `![${file.name}](${e.target?.result})`;
+				try {
+					const {
+						data: { user }
+					} = await supabase.auth.getUser();
+					if (!user) throw new Error('User not found');
+
+					const fileExt = file.name.split('.').pop();
+					const fileName = `${crypto.randomUUID()}.${fileExt}`;
+					const filePath = `${user.id}/images/${fileName}`;
+
+					// Upload file to Supabase Storage
+					const { data, error } = await supabase.storage.from('images').upload(filePath, file, {
+						cacheControl: '3600',
+						upsert: false
+					});
+
+					if (error) throw error;
+
+					// Insert markdown with storage reference
+					const imageMarkdown = `![${file.name}](storage://images/${filePath})`;
 					const newContent =
 						value.substring(0, cursorPosition) +
 						prefix +
 						imageMarkdown +
 						value.substring(cursorPosition);
 					const offset = prefix.length + imageMarkdown.length;
+
 					updateContent(newContent, cursorPosition + offset, cursorPosition + offset);
 
 					// Re-enable editing mode and restore focus
@@ -194,13 +213,51 @@
 						textareaRef?.focus();
 						textareaRef?.setSelectionRange(cursorPosition + offset, cursorPosition + offset);
 					}, 0);
-				};
-				reader.readAsDataURL(file);
+				} catch (error) {
+					console.error('Error uploading image:', error);
+					toast.error('Failed to upload image');
+				}
 			}
 		};
 
-		// Trigger file selection
 		input.click();
+	}
+
+	// Parse markdown text into HTML
+	async function parseMarkdown(content: string): Promise<string> {
+		const processedContent = await processMarkdownImages(content);
+		return marked(processedContent) as string;
+	}
+
+	// Process markdown images
+	async function processMarkdownImages(markdown: string): Promise<string> {
+		const imageRegex = /!\[([^\]]*)\]\(storage:\/\/images\/([^)]+)\)/g;
+		let match;
+		let processedMarkdown = markdown;
+
+		while ((match = imageRegex.exec(markdown)) !== null) {
+			const [fullMatch, altText, path] = match;
+			try {
+				const { data, error } = await supabase.storage.from('images').download(path);
+
+				if (error) throw error;
+
+				const url = URL.createObjectURL(data);
+				processedMarkdown = processedMarkdown.replace(fullMatch, `![${altText}](${url})`);
+			} catch (error) {
+				console.error('Error processing image:', error);
+				// Keep the original markdown if image processing fails
+			}
+		}
+
+		return processedMarkdown;
+	}
+
+	// Watch for value changes and update parsed content
+	$: if (value) {
+		parseMarkdown(value).then((parsed) => {
+			parsedContent = parsed;
+		});
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {

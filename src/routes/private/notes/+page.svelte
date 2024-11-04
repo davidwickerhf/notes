@@ -137,20 +137,12 @@
 		}
 	}
 
-	// Parse markdown text into HTML
-	function parseMarkdown(content: string): string {
-		return marked(content) as string;
-	}
-
-	// Load the selected note content
 	async function loadNoteContent(note: notesApi.Note | null, editing: boolean = false) {
 		console.log('Loading note content: ', note?.fileName);
 		if (note) {
 			noteContent = note.content;
-			parsedContent = parseMarkdown(noteContent);
 			fileName = note.fileName;
 		} else {
-			parsedContent = '';
 			noteContent = '';
 			fileName = '';
 		}
@@ -532,6 +524,7 @@
 					<!-- Text area -->
 					<MarkdownEditor
 						{textareaRef}
+						supabase={data.supabase}
 						bind:value={noteContent}
 						bind:isEditing
 						bind:parsedContent
