@@ -78,8 +78,6 @@
 		return filtered.filter((note) => note.categoryid === categoryId);
 	});
 
-	$: console.log('Update in notes: ', $notes.length);
-
 	// Update content when the selected note changes
 	$: if ($selectedNote && $selectedNote.id !== previousNoteId) {
 		console.log('Changed selected note: ', $selectedNote?.fileName);
@@ -138,11 +136,14 @@
 	}
 
 	async function loadNoteContent(note: notesApi.Note | null, editing: boolean = false) {
-		console.log('Loading note content: ', note?.fileName);
+		console.log('LOADING NOTE CONTENT: ', note?.fileName);
 		if (note) {
 			noteContent = note.content;
 			fileName = note.fileName;
+			parsedContent = marked(noteContent) as string;
+			// TODO Missing the parsing of the content???
 		} else {
+			parsedContent = '';
 			noteContent = '';
 			fileName = '';
 		}
@@ -523,9 +524,10 @@
 
 					<!-- Text area -->
 					<MarkdownEditor
+						noteId={$selectedNote.id}
 						{textareaRef}
 						supabase={data.supabase}
-						bind:value={noteContent}
+						bind:noteContent
 						bind:isEditing
 						bind:parsedContent
 						onInput={saveNoteDebounced}

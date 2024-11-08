@@ -6,10 +6,11 @@
 	import { marked } from 'marked';
 
 	export let supabase: SupabaseClient;
-	export let value: string;
+	export let noteContent: string;
 	export let isEditing: boolean;
 	export let parsedContent: string;
 	export let textareaRef: HTMLTextAreaElement;
+	export let noteId: string;
 	export let onInput: (event: Event) => void;
 	export let onBlur: () => void;
 
@@ -28,22 +29,22 @@
 
 		// Find start of current line
 		let lineStart = selectionStart;
-		while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+		while (lineStart > 0 && noteContent[lineStart - 1] !== '\n') {
 			lineStart--;
 		}
 
 		// Check if line already starts with a heading
-		const currentLine = value.substring(lineStart).split('\n')[0];
+		const currentLine = noteContent.substring(lineStart).split('\n')[0];
 		const headingMatch = currentLine.match(/^(#{1,2})\s/);
 
 		let newContent;
 		if (headingMatch) {
 			// Replace existing heading
 			newContent =
-				value.substring(0, lineStart) + '# ' + currentLine.substring(headingMatch[0].length);
+				noteContent.substring(0, lineStart) + '# ' + currentLine.substring(headingMatch[0].length);
 		} else {
 			// Add new heading
-			newContent = value.substring(0, lineStart) + '# ' + value.substring(lineStart);
+			newContent = noteContent.substring(0, lineStart) + '# ' + noteContent.substring(lineStart);
 		}
 
 		updateContent(newContent, lineStart + 2, lineStart + 2);
@@ -56,22 +57,22 @@
 
 		// Find start of current line
 		let lineStart = selectionStart;
-		while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+		while (lineStart > 0 && noteContent[lineStart - 1] !== '\n') {
 			lineStart--;
 		}
 
 		// Check if line already starts with a heading
-		const currentLine = value.substring(lineStart).split('\n')[0];
+		const currentLine = noteContent.substring(lineStart).split('\n')[0];
 		const headingMatch = currentLine.match(/^(#{1,2})\s/);
 
 		let newContent;
 		if (headingMatch) {
 			// Replace existing heading
 			newContent =
-				value.substring(0, lineStart) + '## ' + currentLine.substring(headingMatch[0].length);
+				noteContent.substring(0, lineStart) + '## ' + currentLine.substring(headingMatch[0].length);
 		} else {
 			// Add new heading
-			newContent = value.substring(0, lineStart) + '## ' + value.substring(lineStart);
+			newContent = noteContent.substring(0, lineStart) + '## ' + noteContent.substring(lineStart);
 		}
 
 		updateContent(newContent, lineStart + 3, lineStart + 3);
@@ -82,13 +83,13 @@
 	function addBold() {
 		const selectionStart = textareaRef.selectionStart;
 		const selectionEnd = textareaRef.selectionEnd;
-		const selectedText = value.substring(selectionStart, selectionEnd);
+		const selectedText = noteContent.substring(selectionStart, selectionEnd);
 		const newContent =
-			value.substring(0, selectionStart) +
+			noteContent.substring(0, selectionStart) +
 			'**' +
 			selectedText +
 			'**' +
-			value.substring(selectionEnd);
+			noteContent.substring(selectionEnd);
 		updateContent(newContent, selectionStart + 2, selectionEnd + 2);
 		textareaRef.focus();
 		textareaRef.setSelectionRange(selectionStart + 2, selectionEnd + 2);
@@ -97,9 +98,13 @@
 	function addItalic() {
 		const selectionStart = textareaRef.selectionStart;
 		const selectionEnd = textareaRef.selectionEnd;
-		const selectedText = value.substring(selectionStart, selectionEnd);
+		const selectedText = noteContent.substring(selectionStart, selectionEnd);
 		const newContent =
-			value.substring(0, selectionStart) + '_' + selectedText + '_' + value.substring(selectionEnd);
+			noteContent.substring(0, selectionStart) +
+			'_' +
+			selectedText +
+			'_' +
+			noteContent.substring(selectionEnd);
 		updateContent(newContent, selectionStart + 1, selectionEnd + 1);
 		textareaRef.focus();
 		textareaRef.setSelectionRange(selectionStart + 1, selectionEnd + 1);
@@ -107,15 +112,15 @@
 	function addCheckbox() {
 		const selectionStart = textareaRef.selectionStart;
 		const selectionEnd = textareaRef.selectionEnd;
-		const selectedText = value.substring(selectionStart, selectionEnd);
-		const currentLine = value.substring(0, selectionStart).split('\n').pop() || '';
+		const selectedText = noteContent.substring(selectionStart, selectionEnd);
+		const currentLine = noteContent.substring(0, selectionStart).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 		const newContent =
-			value.substring(0, selectionStart) +
+			noteContent.substring(0, selectionStart) +
 			prefix +
 			'- [ ] ' +
 			selectedText +
-			value.substring(selectionEnd);
+			noteContent.substring(selectionEnd);
 		const offset = prefix.length + 6;
 		updateContent(newContent, selectionStart + offset, selectionEnd + offset);
 		textareaRef.focus();
@@ -124,10 +129,13 @@
 
 	function addBulletList() {
 		const cursorPosition = textareaRef.selectionStart;
-		const currentLine = value.substring(0, cursorPosition).split('\n').pop() || '';
+		const currentLine = noteContent.substring(0, cursorPosition).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 		const newContent =
-			value.substring(0, cursorPosition) + prefix + '- ' + value.substring(cursorPosition);
+			noteContent.substring(0, cursorPosition) +
+			prefix +
+			'- ' +
+			noteContent.substring(cursorPosition);
 		const offset = prefix.length + 2;
 		updateContent(newContent, cursorPosition + offset, cursorPosition + offset);
 		textareaRef.focus();
@@ -136,10 +144,13 @@
 
 	function addNumberedList() {
 		const cursorPosition = textareaRef.selectionStart;
-		const currentLine = value.substring(0, cursorPosition).split('\n').pop() || '';
+		const currentLine = noteContent.substring(0, cursorPosition).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 		const newContent =
-			value.substring(0, cursorPosition) + prefix + '1. ' + value.substring(cursorPosition);
+			noteContent.substring(0, cursorPosition) +
+			prefix +
+			'1. ' +
+			noteContent.substring(cursorPosition);
 		const offset = prefix.length + 3;
 		updateContent(newContent, cursorPosition + offset, cursorPosition + offset);
 		textareaRef.focus();
@@ -149,17 +160,17 @@
 	function addCodeBlock() {
 		const selectionStart = textareaRef.selectionStart;
 		const selectionEnd = textareaRef.selectionEnd;
-		const selectedText = value.substring(selectionStart, selectionEnd);
-		const currentLine = value.substring(0, selectionStart).split('\n').pop() || '';
+		const selectedText = noteContent.substring(selectionStart, selectionEnd);
+		const currentLine = noteContent.substring(0, selectionStart).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 		const newContent =
-			value.substring(0, selectionStart) +
+			noteContent.substring(0, selectionStart) +
 			prefix +
 			'```\n\n' +
 			selectedText +
 			(selectedText ? '\n' : '') +
 			'```' +
-			value.substring(selectionEnd);
+			noteContent.substring(selectionEnd);
 		const offset = prefix.length + 4;
 		updateContent(newContent, selectionStart + offset, selectionEnd + offset);
 		textareaRef.focus();
@@ -168,7 +179,7 @@
 
 	async function addImage() {
 		const cursorPosition = textareaRef.selectionStart;
-		const currentLine = value.substring(0, cursorPosition).split('\n').pop() || '';
+		const currentLine = noteContent.substring(0, cursorPosition).split('\n').pop() || '';
 		const prefix = currentLine.length > 0 ? '\n' : '';
 
 		const input = document.createElement('input');
@@ -191,7 +202,10 @@
 					// Upload file to Supabase Storage
 					const { data, error } = await supabase.storage.from('images').upload(filePath, file, {
 						cacheControl: '3600',
-						upsert: false
+						upsert: false,
+						metadata: {
+							note_id: noteId // Assuming noteId is passed as a prop to the component
+						}
 					});
 
 					if (error) throw error;
@@ -199,10 +213,10 @@
 					// Insert markdown with storage reference
 					const imageMarkdown = `![${file.name}](storage://images/${filePath})`;
 					const newContent =
-						value.substring(0, cursorPosition) +
+						noteContent.substring(0, cursorPosition) +
 						prefix +
 						imageMarkdown +
-						value.substring(cursorPosition);
+						noteContent.substring(cursorPosition);
 					const offset = prefix.length + imageMarkdown.length;
 
 					updateContent(newContent, cursorPosition + offset, cursorPosition + offset);
@@ -225,8 +239,24 @@
 
 	// Parse markdown text into HTML
 	async function parseMarkdown(content: string): Promise<string> {
-		const processedContent = await processMarkdownImages(content);
-		return marked(processedContent) as string;
+		// Initially parse the markdown without images
+		const initialContent = marked(
+			content.replace(/!\[[^\]]*\]\(storage:[^)]+\)/g, '\n Loading image...')
+		) as string;
+
+		// Process images asynchronously
+		processMarkdownImages(content).then(async (processedContent) => {
+			// Update the content with images once processed
+			if (processedContent) {
+				// Assuming you have a way to update the displayed content
+				let markedContent = await marked(processedContent);
+				updateDisplayedContent(markedContent);
+			}
+			console.log('PROCESSED IMAGES');
+		});
+
+		// Return the initial parsed content immediately
+		return initialContent;
 	}
 
 	// Process markdown images
@@ -254,8 +284,9 @@
 	}
 
 	// Watch for value changes and update parsed content
-	$: if (value) {
-		parseMarkdown(value).then((parsed) => {
+	$: if (noteId) {
+		console.log('PARSING MARKDOWN');
+		parseMarkdown(noteContent).then((parsed) => {
 			parsedContent = parsed;
 		});
 	}
@@ -263,7 +294,7 @@
 	function handleKeyDown(event: KeyboardEvent) {
 		const textarea = event.target as HTMLTextAreaElement;
 		const cursorPosition = textarea.selectionStart;
-		const currentLine = value.substring(0, cursorPosition).split('\n').pop() || '';
+		const currentLine = noteContent.substring(0, cursorPosition).split('\n').pop() || '';
 		const lineStart = currentLine.trim();
 
 		if (event.key === 'Enter') {
@@ -283,8 +314,8 @@
 				) {
 					console.log('Empty list item detected, removing it');
 					// Remove the empty list item by excluding it from the content
-					const contentBeforeLine = value.substring(0, cursorPosition - currentLine.length);
-					const contentAfterLine = value.substring(cursorPosition);
+					const contentBeforeLine = noteContent.substring(0, cursorPosition - currentLine.length);
+					const contentAfterLine = noteContent.substring(cursorPosition);
 					const newContent = contentBeforeLine + '\n' + contentAfterLine;
 					updateContent(
 						newContent,
@@ -304,7 +335,9 @@
 					}
 
 					const newContent =
-						value.substring(0, cursorPosition) + newLine + value.substring(cursorPosition);
+						noteContent.substring(0, cursorPosition) +
+						newLine +
+						noteContent.substring(cursorPosition);
 					updateContent(
 						newContent,
 						cursorPosition + newLine.length,
@@ -317,55 +350,61 @@
 			event.preventDefault();
 			const closingBracket = { '[': ']', '(': ')', '{': '}' }[event.key];
 			const newContent =
-				value.substring(0, cursorPosition) +
+				noteContent.substring(0, cursorPosition) +
 				event.key +
 				closingBracket +
-				value.substring(cursorPosition);
+				noteContent.substring(cursorPosition);
 			updateContent(newContent, cursorPosition + 1, cursorPosition + 1);
 		} else if (event.key === '*') {
 			event.preventDefault();
 			const newContent =
-				value.substring(0, cursorPosition) + '**' + value.substring(cursorPosition);
+				noteContent.substring(0, cursorPosition) + '**' + noteContent.substring(cursorPosition);
 			updateContent(newContent, cursorPosition + 1, cursorPosition + 1);
 		} else if (event.key === '_') {
 			event.preventDefault();
 			const newContent =
-				value.substring(0, cursorPosition) + '__' + value.substring(cursorPosition);
+				noteContent.substring(0, cursorPosition) + '__' + noteContent.substring(cursorPosition);
 			updateContent(newContent, cursorPosition + 1, cursorPosition + 1);
 		} else if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
 			event.preventDefault();
 			const selectionStart = textarea.selectionStart;
 			const selectionEnd = textarea.selectionEnd;
-			const selectedText = value.substring(selectionStart, selectionEnd);
+			const selectedText = noteContent.substring(selectionStart, selectionEnd);
 			const newContent =
-				value.substring(0, selectionStart) +
+				noteContent.substring(0, selectionStart) +
 				'**' +
 				selectedText +
 				'**' +
-				value.substring(selectionEnd);
+				noteContent.substring(selectionEnd);
 			updateContent(newContent, selectionStart + 2, selectionEnd + 2);
 		} else if ((event.ctrlKey || event.metaKey) && event.key === 'i') {
 			event.preventDefault();
 			const selectionStart = textarea.selectionStart;
 			const selectionEnd = textarea.selectionEnd;
-			const selectedText = value.substring(selectionStart, selectionEnd);
+			const selectedText = noteContent.substring(selectionStart, selectionEnd);
 			const newContent =
-				value.substring(0, selectionStart) +
+				noteContent.substring(0, selectionStart) +
 				'_' +
 				selectedText +
 				'_' +
-				value.substring(selectionEnd);
+				noteContent.substring(selectionEnd);
 			updateContent(newContent, selectionStart + 1, selectionEnd + 1);
 		}
 	}
 
 	function updateContent(newContent: string, cursorStart: number, cursorEnd: number) {
-		value = newContent;
+		noteContent = newContent;
 		setTimeout(() => {
 			textareaRef.value = newContent;
 			textareaRef.selectionStart = cursorStart;
 			textareaRef.selectionEnd = cursorEnd;
 		}, 0);
+	}
+
+	// Function to update the displayed content
+	function updateDisplayedContent(content: string) {
+		// Logic to update the displayed content in your component
+		parsedContent = content; // Assuming parsedContent is a reactive variable
 	}
 </script>
 
@@ -373,7 +412,7 @@
 	<div class="relative w-full h-full">
 		<textarea
 			bind:this={textareaRef}
-			bind:value
+			bind:value={noteContent}
 			on:input={onInput}
 			on:keydown={handleKeyDown}
 			on:blur={onBlur}

@@ -32,7 +32,8 @@
 		Search,
 		ChevronsUpDown,
 		User,
-		LogOut
+		LogOut,
+		Image
 	} from 'lucide-svelte';
 
 	import { goto } from '$app/navigation';
@@ -387,6 +388,15 @@
 					</Dialog.Content>
 				</Dialog.Root>
 			</div>
+
+			<SidebarButton
+				icon={Image}
+				text="Images"
+				selected={selectedTab === 'images'}
+				onClick={() => {
+					goto('/private/images');
+				}}
+			/>
 
 			<SidebarButton
 				icon={Trash}
