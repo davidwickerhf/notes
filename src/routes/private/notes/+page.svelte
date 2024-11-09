@@ -201,7 +201,8 @@
 
 		if (updatedNote) {
 			selectedNote.set(updatedNote);
-			if (reload) loadNoteContent(updatedNote, false);
+			// if (reload) loadNoteContent(updatedNote, false);
+			if (reload) isEditing = false;
 			await extractTasksFromNote(noteContent, updatedNote.id);
 		} else {
 			toast.error('Error saving note');

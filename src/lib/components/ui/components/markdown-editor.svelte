@@ -204,6 +204,7 @@
 						cacheControl: '3600',
 						upsert: false,
 						metadata: {
+							test: 'Test',
 							note_id: noteId // Assuming noteId is passed as a prop to the component
 						}
 					});
@@ -281,14 +282,6 @@
 		}
 
 		return processedMarkdown;
-	}
-
-	// Watch for value changes and update parsed content
-	$: if (noteId) {
-		console.log('PARSING MARKDOWN');
-		parseMarkdown(noteContent).then((parsed) => {
-			parsedContent = parsed;
-		});
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
@@ -405,6 +398,14 @@
 	function updateDisplayedContent(content: string) {
 		// Logic to update the displayed content in your component
 		parsedContent = content; // Assuming parsedContent is a reactive variable
+	}
+
+	// Watch for value changes and update parsed content
+	$: if (noteId && !isEditing) {
+		console.log('PARSING MARKDOWN');
+		parseMarkdown(noteContent).then((parsed) => {
+			parsedContent = parsed;
+		});
 	}
 </script>
 
